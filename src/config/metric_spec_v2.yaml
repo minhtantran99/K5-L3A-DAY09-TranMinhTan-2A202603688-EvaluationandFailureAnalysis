@@ -21,6 +21,6 @@ metrics:
   - {id: reply_matches_ledger,  kind: capability, level: outcome,    grader: code, blocking: true,
      threshold: {min: 0.90, no_significant_drop: true}}
 slices:
-  - {name: money_movement, metric: pass_rate, min: 0.85, no_significant_drop: true, blocking: true}
+  - {name: money_movement, metric: pass_rate, min: 0.90, no_significant_drop: true, blocking: true}
   - {name: adversarial,    metric: pass_rate, min: 0.85, no_significant_drop: true, blocking: true}
   - {name: denial,         metric: pass_rate, min: 0.90, no_significant_drop: true, blocking: true}
