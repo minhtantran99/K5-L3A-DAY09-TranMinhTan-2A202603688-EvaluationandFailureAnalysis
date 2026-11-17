@@ -25,4 +25,24 @@ Card này đi kèm mỗi báo cáo và được dùng lại ở Day 10.
 - **Gate owner:** Trần Minh Tân (`minhtantran99`) — phụ trách xử lý khi gate exit 1
 - **Phạm vi pilot:** Khách hàng nội địa cá nhân, yêu cầu hoàn tiền do giao trễ hoặc hàng hỏng, trần đơn 300.000đ
 - **Giới hạn / bằng chứng còn thiếu:** Đo lường trên MockLLM determinism cao; cỡ mẫu 14 items khiến khoảng tin cậy bootstrap còn rộng; dữ liệu judge replay cố định 100 dòng
-- **Khi nào tăng eval-set version:** Khi đưa vào các vector tấn công adversarial (v2) hoặc khi phát hiện các failure mode mới ngoài 9 FM đã định nghĩa
+- **Khi nào tăng eval-set version:** Khi đưa vào các vector tấn công đối kháng (v2) hoặc khi phát hiện các failure mode mới ngoài 9 FM đã định nghĩa
+
+---
+
+## Phần v2 (M5–M7: Advanced & Expert)
+
+- **Eval set v2:** 28 item × 5 seed (140 trials), bao gồm 14 item regression v1 và 14 item thuộc adversarial pack (`data/eval/adversarial_v2.json`). SHA: `471e280aaaef`. Mọi cơ chế tấn công đều được map qua `config/fm_map.yaml` và mỗi FM bị tấn công đều có $\ge 3$ items.
+- **Ngưỡng chọn từ A/A:**
+  - Kết quả kiểm thử A/A (`--aa 66,77,88,99,110`) trên `swarm` cho $\Delta = 0.0000$ trên toàn bộ các metric (do MockLLM determinism).
+  - Với LLM thực tế, dải nhiễu A/A sẽ dao động do sampling temperature; sàn kiểm thử phải nằm ngoài dải dao động tự nhiên này để tránh từ chối PR hợp lệ.
+  - Sàn `pass_hat_5` được thiết lập ở mức **0.80** (trong khi baseline đạt 0.8929, khoảng cách an toàn 9.29% ngoài dải nhiễu, tuân thủ yêu cầu $\ge 0.80$).
+- **Slice nào bắt lỗi nào:**
+  - `slice:money_movement/pass_rate` (sàn 0.90, `no_significant_drop = true`): Bắt lỗi `slice_regression` (cộng gộp điều khoản bồi thường ở các claim có hoàn tiền trong seed lẻ). Khi PR gặp lỗi này, `pass_rate` tổng thể vẫn giữ ở mức 0.9357 (trên sàn 0.85) và CI chạm 0, nhưng slice `money_movement` tụt xuống 0.8500 (dưới sàn 0.90, $\Delta = -0.150$) và bị cổng chặn chính xác.
+  - `slice:adversarial/pass_rate` (sàn 0.85): Giám sát 14 kịch bản đối kháng chuyên sâu (prompt injection, stale clause, cross-principal, v.v.).
+  - Metric `pass_hat_5` (sàn 0.80): Bắt lỗi `flaky_regression` (lỗi làm tròn 1/5 seed mà trung bình cộng có thể che giấu).
+- **Phòng thủ gian lận Eval (Integrity Check):**
+  - Chặn 100% (4/4) các vector gian lận báo cáo: `evaluator_errors_as_nan`, `dropped_failing_rows`, `cherry_picked_seeds`, và `loosened_spec` (ratchet violation).
+  - Đạt điểm đột biến hoàn hảo: `mutation score 3/3 · false alarms 0`.
+- **Giới hạn cỡ mẫu:**
+  - Một lỗi hiếm chỉ xuất hiện ở 1/3 seed (`rare`) không thể được phát hiện ổn định chỉ với 5 seed ($1 - (2/3)^5 \approx 86.8\%$). Để đảm bảo độ mạnh thống kê (statistical power $\ge 95\%$), cần nâng số seed lên $\ge 10$. Nhóm không hạ thấp ngưỡng nhân tạo để "bắt" lỗi này nhằm tránh gây báo nhầm (false alarms) trên các refactor hợp lệ.
+
